@@ -27,6 +27,11 @@ public:
 	/// Number of elements in Spirver::Stage
 	const static int stageCount;
 
+	//
+	// Extensions:
+	//
+	static std::vector<glslang::TShader*> precompiled_shaders;
+
 	static GLuint StageToGlsl(Stage stage);
 	static EShLanguage StageToGlslang(Stage stage);
 	static int StageToInt(Stage stage);
@@ -72,7 +77,21 @@ public:
 	//template<typename T>
 	//static bool optimizeSpirv(std::vector<T>& spirv);
 
+	//
+	// Extensions:
+	//
+	static bool precompileGlslAsAstShader(const std::string& glsl, Stage stage, int uniformBase = -1);
 
+	static bool glslToSpirvAddPrecompiled(const std::string& glsl, std::vector<GLuint>& spirv, Stage stage, int uniformBase);
+	static bool glslToSpirvAddPrecompiled(const std::string& glsl, std::vector<GLuint>& spirv, Stage stage)
+	{
+		return glslToSpirvAddPrecompiled(glsl, spirv, stage, -1);
+	}
+	static bool singleGlslToSpirv(const std::string& glsl, std::vector<GLuint>& spirv, Stage stage, int uniformBase);
+	static bool singleGlslToSpirv(const std::string& glsl, std::vector<GLuint>& spirv, Stage stage)
+	{
+		return singleGlslToSpirv(glsl, spirv, stage, -1);
+	}	
 
 private:
 	const static TBuiltInResource DefaultTBuiltInResource;
@@ -93,6 +112,8 @@ private:
 	static bool astProgramToSpirv(glslang::TProgram* program, std::vector<GLuint>& spirv, Stage stage);
 
 	static bool glslToSpirv(const std::string& glsl, std::vector<GLuint>& spirv, Stage stage, int uniformBase, bool analyze);
+	// Extensions:
+	static bool singleAstShaderToSpirv(glslang::TShader* shader, std::vector<GLuint>& spirv, Stage stage);
 };
 
 //#include <Dragonfly/detail/Spirver/Spirver.inl>

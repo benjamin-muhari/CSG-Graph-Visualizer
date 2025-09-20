@@ -508,17 +508,42 @@ static bool GenerateSdf()
     std::ifstream postfix_file("Shaders/raytrace.frag.template.postfix");
     std::ofstream result("Shaders/gen_raytrace.frag");
 
+    std::string spirv_prefix = R"(#version 460
+
+float sphere(vec3 p, float r);
+float box(vec3 p, vec3 b);
+
+// Infinite cylinders
+float cylinderZ(vec3 p, float r);
+float cylinderY(vec3 p, float r);
+
+// Finite cylinders
+float cylinderZ(vec3 p, vec2 h);
+float cylinderY(vec3 p, vec2 h);
+
+// Material Value struct fwd declare
+struct Value {float d; int mat;};
+struct Material {
+    vec3  color;        // [0, 1/pi]    reflective color
+    float roughness;    // [0, 7]       shininess
+    vec3 emission;		// [0, inf]     light emitting surface if nonzero
+    float metalness;    // [0.02, 0.05] for non-metals, [0.6, 0.9] for metals
+};
+
+Material colors[7];)";
+    //result << spirv_prefix << "\n" << glsl_prefix << sdf(*selected_root) << "\n" << material2(*selected_root) << glsl_postfix;
+
+
     while (std::getline(prefix_file, buff)) {
         result << buff;
         result << "\n";
     }
-
     result << "\n" << glsl_prefix << sdf(*selected_root) << "\n" << material2(*selected_root) << glsl_postfix;
-
     while (std::getline(postfix_file, buff)) {
         result << buff;
         result << "\n";
     }
+
 
     // TODO: where to put; works already, but more logical place
     graph_changed = true;
@@ -2329,7 +2354,7 @@ bool Application_Frame()
     static CsgPin* newNodeLinkPin = nullptr;
     static CsgPin* newLinkPin = nullptr;
 
-    static float leftPaneWidth = 400.0f;
+    static float leftPaneWidth = 200.0f;
     static float rightPaneWidth = 800.0f;
     Splitter(true, 4.0f, &leftPaneWidth, &rightPaneWidth, 50.0f, 50.0f);
 
@@ -2839,7 +2864,7 @@ bool Application_Frame()
     ed::End();
     //ImGui::ShowTestWindow();
     //ImGui::ShowMetricsWindow();
-    ImGui::ShowDemoWindow();
+    //ImGui::ShowDemoWindow();
     return (graph_changed && (render_all || generate_clicked));
 }
 

@@ -1,14 +1,14 @@
-#version 410
+#version 460
 
 layout(location = 0) in vec2 fs_in_tex;
-out vec4 fs_out_col;
-uniform sampler2D texImg;
+layout(location = 0) out vec4 fs_out_col;
+layout(location = 0) uniform sampler2D texImg;
 
-uniform float iTime;
-uniform vec2 iResolution;
-uniform vec3 cameraPos;
-uniform vec3 cameraAt;
-uniform mat3 cameraView;
+layout(location = 1) uniform float iTime;
+layout(location = 2) uniform vec2 iResolution;
+layout(location = 3) uniform vec3 cameraPos;
+layout(location = 4) uniform vec3 cameraAt;
+layout(location = 5) uniform mat3 cameraView;
 
 const float pi = 3.1415926535897932384626433832795;
     

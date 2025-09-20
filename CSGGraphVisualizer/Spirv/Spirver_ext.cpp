@@ -13,6 +13,10 @@ const int Spirver_ext::stageCount = 3;
 std::stringstream Spirver_ext::errors = std::stringstream();
 
 const char* Spirver_ext::logTypeStr[] = { "Program", "Shader", "PrespecShader" };
+//
+// Extensions:
+//
+std::vector<glslang::TShader*> Spirver_ext::precompiled_shaders;
 
 GLuint Spirver_ext::StageToGlsl(Stage stage)
 {
@@ -276,6 +280,65 @@ void Spirver_ext::Clean()
 	glslang::FinalizeProcess();
 }
 
+//
+// Extension methods to spirver.cpp
+//
+bool Spirver_ext::precompileGlslAsAstShader(const std::string& glsl, Stage stage, int uniformBase)
+{
+	glslang::TShader* astshader = new glslang::TShader(StageToGlslang(stage));
+	if (uniformBase >= 0) { if (!glslToAstShader(glsl, astshader, uniformBase)) return false; }
+	else { if (!glslToAstShader(glsl, astshader)) return false; }
+
+	precompiled_shaders.emplace_back(astshader);
+	return true;
+}
+
+bool Spirver_ext::glslToSpirvAddPrecompiled(const std::string& glsl, std::vector<GLuint>& spirv, Stage stage, int uniformBase)
+{
+	glslang::TShader* astshader = new glslang::TShader(StageToGlslang(stage));
+	if (uniformBase >= 0) { if (!glslToAstShader(glsl, astshader, uniformBase)) return false; }
+	else { if (!glslToAstShader(glsl, astshader)) return false; }
+
+	glslang::TProgram* astprogram = new glslang::TProgram();
+	for (glslang::TShader* shader : precompiled_shaders)
+	{
+		astprogram->addShader(shader);
+		//glslang::TShader* new_precompiled = new glslang::TShader(StageToGlslang(stage));
+		//*new_precompiled = *shader;
+	}		
+	astprogram->addShader(astshader);
+	astprogram->link(EShMessages::EShMsgDefault);
+	// If there were errors, stop execution
+	if (!printLog(astprogram))
+		return false;
+
+	bool ret = astProgramToSpirv(astprogram, spirv, stage);
+	delete astprogram; delete astshader;
+	return ret;
+}
+
+bool Spirver_ext::singleGlslToSpirv(const std::string& glsl, std::vector<GLuint>& spirv, Stage stage, int uniformBase)
+{
+	glslang::TShader* astshader = new glslang::TShader(StageToGlslang(stage));
+	if (uniformBase >= 0) { if (!glslToAstShader(glsl, astshader, uniformBase)) return false; }
+	else { if (!glslToAstShader(glsl, astshader)) return false; }
+
+	bool ret = singleAstShaderToSpirv(astshader, spirv, stage);
+	delete astshader;
+	return ret;
+}
+
+bool Spirver_ext::singleAstShaderToSpirv(glslang::TShader* shader, std::vector<GLuint>& spirv, Stage stage)
+{
+	spv::SpvBuildLogger logger;
+	glslang::SpvOptions spvOptions;
+	spvOptions.disableOptimizer = true;
+	glslang::GlslangToSpv(*(shader->getIntermediate()), spirv, &logger, &spvOptions);
+	return printLog(logger);
+}
+//
+// Extension methods END
+//
 
 bool Spirver_ext::glslToSpirv(const std::string& glsl, std::vector<GLuint>& spirv, Stage stage, int uniformBase, bool analyze)
 {

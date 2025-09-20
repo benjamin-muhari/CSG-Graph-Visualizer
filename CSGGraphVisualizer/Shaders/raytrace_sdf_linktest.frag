@@ -92,4 +92,6 @@ Material material(vec3 p) {
 	return colors[r0.mat];
 }
 
+//void main(){}
+
 // End of generated GLSL code

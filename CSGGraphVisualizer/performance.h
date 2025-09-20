@@ -22,7 +22,7 @@ inline void DumpMeasurements()
 		auto took_ms = std::chrono::duration_cast<std::chrono::milliseconds>(took);
 		std::string first_event = (*(it - 1)).second;
 		std::string second_event = (*it).second;
-		std::cout << first_event << " --> " << second_event << ": " << took_ms.count() << "ms\n";
+		std::cout /*<< first_event*/ << " --> " << second_event << ": " << took_ms.count() << " ms\n";
 		//std::cout << first_event << " #" << measurement_counts[first_event] << " --> "
 		//	<< second_event << " #" << measurement_counts[second_event] << ": " << took_ms.count() << "ms\n";
 	}
