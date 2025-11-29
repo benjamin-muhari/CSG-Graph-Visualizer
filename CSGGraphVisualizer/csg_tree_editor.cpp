@@ -508,7 +508,9 @@ static bool GenerateSdf()
     std::ifstream postfix_file("Shaders/raytrace.frag.template.postfix");
     std::ofstream result("Shaders/gen_raytrace.frag");
 
-    std::string spirv_prefix = R"(#version 460
+    if (GLOBAL_spirv_precompile)
+    {
+        std::string spirv_prefix = R"(#version 460
 
 float sphere(vec3 p, float r);
 float box(vec3 p, vec3 b);
@@ -531,19 +533,21 @@ struct Material {
 };
 
 Material colors[7];)";
-    //result << spirv_prefix << "\n" << glsl_prefix << sdf(*selected_root) << "\n" << material2(*selected_root) << glsl_postfix;
 
-
-    while (std::getline(prefix_file, buff)) {
-        result << buff;
-        result << "\n";
+        result << spirv_prefix << "\n" << glsl_prefix << sdf(*selected_root) << "\n" << material2(*selected_root) << glsl_postfix;
     }
-    result << "\n" << glsl_prefix << sdf(*selected_root) << "\n" << material2(*selected_root) << glsl_postfix;
-    while (std::getline(postfix_file, buff)) {
-        result << buff;
-        result << "\n";
+    else
+    {
+        while (std::getline(prefix_file, buff)) {
+            result << buff;
+            result << "\n";
+        }
+        result << "\n" << glsl_prefix << sdf(*selected_root) << "\n" << material2(*selected_root) << glsl_postfix;
+        while (std::getline(postfix_file, buff)) {
+            result << buff;
+            result << "\n";
+        }
     }
-
 
     // TODO: where to put; works already, but more logical place
     graph_changed = true;

@@ -40,6 +40,8 @@ void drawRawOgl(GLuint programID, GLuint texID, GLuint texLOC, df::VaoArrays& va
 std::vector<CSGVMeasurment> measurements;
 std::map<std::string, int> measurement_counts;
 
+bool GLOBAL_spirv_precompile = false;
+
 int main(int argc, char* args[])
 {
 	//main2(argc,args);
@@ -53,6 +55,78 @@ int main(int argc, char* args[])
 
 void raytrace_generation_demo()
 {
+	//std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
+	//std::cout << "Use spirv?(1/0): ";
+	//std::cin >> use_spirv;
+	//std::cout << "\n";
+	
+	//// Usage modes
+	// Opengl (native)
+	// Opengl (dragonlfy)
+	// Spirv no precompile
+	// Spirv skip ASTProgram
+
+	int usage_mode_code = -1;
+
+	std::cout << "Select how the fragment shaders will be compiled:\n";
+	std::cout << "1: OpenGL, native\n";
+	std::cout << "2: OpenGL, dragonfly framework\n";
+	std::cout << "3: Spirv cross compilation\n";
+	std::cout << "4: EXPERIMENTAL: Spirv cross compilation, partial pre-compilation (only for testing, breaks on 2nd compilation)\n";
+	std::cout << "5: Spirv cross compilation, skip spirv program linkage\n";
+
+	std::string usage_mode_str;
+	int usage_mode;
+
+	while (true)
+	{
+		std::cin >> usage_mode_str;
+
+		if (std::all_of(usage_mode_str.begin(), usage_mode_str.end(), ::isdigit))
+		{
+			usage_mode = std::stoi(usage_mode_str);
+			if (usage_mode >= 1 && usage_mode <= 5)
+				break;
+		}
+
+		std::cout << "Input must be a number between 1-5, try again:\n";
+	}
+	
+	// Usage mode variables
+	//bool use_dragonfly = false;
+	//bool use_spirv = true;
+	//bool generate_spirv_shaders = true;
+	//bool spirv_skipASTprogram = true;
+	bool generate_spirv_shaders = false;
+	//
+	bool use_dragonfly = false;
+	bool use_spirv = false;
+	bool spirv_skipASTprogram = false;
+	GLOBAL_spirv_precompile = false;
+
+	switch (usage_mode)
+	{
+		case 1: // "1: OpenGL, native\n"
+			break;
+		case 2: // "2: OpenGL, dragonfly framework\n"
+			use_dragonfly = true;
+			break;
+		case 3: // "3: Spirv cross compilation\n"
+			use_spirv = true;
+			break;
+		case 4: // "4: Spirv cross compilation, partial pre-compilation\n"
+			use_spirv = true;
+			GLOBAL_spirv_precompile = true;
+			break;
+		case 5: // "5: Spirv cross compilation, skip spirv program linkage\n"
+			use_spirv = true;
+			spirv_skipASTprogram = true;
+			generate_spirv_shaders = true;
+			break;
+		default:
+			break;
+	}
+
 	glm::vec2 iResolution{ 620, 465 };
 	df::Sample sam("Ray Tracing Demo", iResolution.x, iResolution.y, df::Sample::FLAGS::DEFAULT);
 	// df::Sample simplifies OpenGL, SDL, ImGui, RenderDoc in the render loop, and handles user input via callback member functions in priority queues
@@ -96,15 +170,6 @@ void raytrace_generation_demo()
 	int recompile_count = 0;
 	bool camera_changed;
 
-	// Usage mode variables
-	bool use_dragonfly = false;
-	bool use_spirv = true;
-	bool generate_spirv_shaders = true;
-	bool generate_skipASTprogram = true;
-
-	//std::cout << "Use spirv?(1/0): ";
-	//std::cin >> use_spirv;
-	//std::cout << "\n";
 	if (!use_spirv && use_dragonfly)
 	{
 		raytraceProgram = new df::ShaderProgramEditorVF("Ray tracing demo shader program");
@@ -119,7 +184,7 @@ void raytrace_generation_demo()
 			{
 				std::vector<GLuint> spirv_bin_vs;
 				std::vector<GLuint> spirv_bin_fs;
-				if (generate_skipASTprogram)
+				if (spirv_skipASTprogram)
 				{
 					InsertMeasurement("Start compiling and loading spirv binaries from glsl (vertex, no ASTProgram)");
 					getSpirvBinarySingle("Shaders/raytrace.vert", spirv_bin_vs, Spirver_ext::Stage::Vertex);
@@ -250,9 +315,19 @@ void raytrace_generation_demo()
 						
 						std::vector<GLuint> spirv_bin_gen_fs;
 						//getGenSpirvBinary("Shaders/raytrace_sdf_linktest.frag", spirv_bin_gen_fs, Spirver_ext::Stage::Fragment);
-						getSpirvBinary("Shaders/gen_raytrace.frag", spirv_bin_gen_fs, Spirver_ext::Stage::Fragment);
 
-						//getGenSpirvBinary("Shaders/gen_raytrace.frag", spirv_bin_gen_fs, Spirver_ext::Stage::Fragment);
+						if (GLOBAL_spirv_precompile)
+						{
+							getGenSpirvBinary("Shaders/gen_raytrace.frag", spirv_bin_gen_fs, Spirver_ext::Stage::Fragment);
+						}
+						else if (spirv_skipASTprogram)
+						{
+							getSpirvBinarySingle("Shaders/gen_raytrace.frag", spirv_bin_gen_fs, Spirver_ext::Stage::Fragment);
+						}
+						else
+						{
+							getSpirvBinary("Shaders/gen_raytrace.frag", spirv_bin_gen_fs, Spirver_ext::Stage::Fragment);
+						}
 						
 						m_gen_fsID = loadShaderSpirv(GL_FRAGMENT_SHADER, spirv_bin_gen_fs);
 					}
@@ -705,7 +780,7 @@ void getSpirvBinary(const char* _fileName, std::vector<GLuint>& result, Spirver_
 void getSpirvBinarySingle(const char* _fileName, std::vector<GLuint>& result, Spirver_ext::Stage shader_stage)
 {
 	if (Spirver_ext::singleGlslToSpirv(getShaderString(_fileName), result, shader_stage))
-		std::cout << "Successfully converted " << _fileName << " to spirv binary!\n";
+		std::cout << "Successfully converted " << _fileName << " to spirv binary! (skipped ASTProgram)\n";
 	else
 		std::cout << "Failed to convert " << _fileName << " to spirv binary!\n";
 }

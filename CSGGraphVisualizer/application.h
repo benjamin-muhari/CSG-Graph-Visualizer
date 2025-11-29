@@ -11,3 +11,5 @@ const char* Application_GetName();
 void Application_Initialize();
 void Application_Finalize();
 bool Application_Frame();
+
+extern bool GLOBAL_spirv_precompile;
