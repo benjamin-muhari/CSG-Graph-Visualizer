@@ -465,7 +465,7 @@ static void PerfTestGenerateSdf(int count)
     for (int i = 0; i < count; i++)
         std::get<Union<CsgNode>>(*selected_root).a.emplace_back(sphere((float)i, CsgNode{ GetNextId() }));
 
-    GenerateSdf();
+    generate_clicked = GenerateSdf();
     delete selected_root;
     // TODO: delete union members, memory leak currently
 }
@@ -1509,11 +1509,11 @@ void ShowLeftPane(float paneWidth)
     //if (ImGui::Button("Select root"))
     //    SelectRootNode();
     //ImGui::SameLine();
-    if (ImGui::Button("Generate sdf"))
+    if (ImGui::Button("Generate selected node"))
         ClickGenerateSdf();
     int objcount = 100;
-    if (ImGui::Button("Genereate test objects"))
-        PerfTestGenerateSdf(objcount);
+    //if (ImGui::Button("Genereate test objects"))
+    //    PerfTestGenerateSdf(objcount);
     if (ImGui::Button("QuickSave"))
         SaveNodes();
     if (ImGui::Button("QuickLoad"))
@@ -2862,7 +2862,7 @@ bool Application_Frame()
     */
 
     // Generate new .glsl fragment shader if necessary
-    if (graph_changed && render_all)
+    if (graph_changed && render_all && !generate_clicked)
         AutoGenerateSdf();
 
     ed::End();
