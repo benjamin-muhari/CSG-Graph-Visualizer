@@ -1511,9 +1511,9 @@ void ShowLeftPane(float paneWidth)
     //ImGui::SameLine();
     if (ImGui::Button("Generate selected node"))
         ClickGenerateSdf();
-    int objcount = 100;
-    //if (ImGui::Button("Genereate test objects"))
-    //    PerfTestGenerateSdf(objcount);
+    int objcount = 300;
+    if (ImGui::Button("TESTING_ONLY! Generate 300 object model"))
+        PerfTestGenerateSdf(objcount);
     if (ImGui::Button("QuickSave"))
         SaveNodes();
     if (ImGui::Button("QuickLoad"))

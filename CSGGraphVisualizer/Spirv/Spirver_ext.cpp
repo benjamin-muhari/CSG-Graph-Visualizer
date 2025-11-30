@@ -285,6 +285,13 @@ void Spirver_ext::Clean()
 //
 bool Spirver_ext::precompileGlslAsAstShader(const std::string& glsl, Stage stage, int uniformBase)
 {
+	for (glslang::TShader* shader : precompiled_shaders)
+	{
+		delete shader;
+	}
+	precompiled_shaders.clear();
+
+
 	glslang::TShader* astshader = new glslang::TShader(StageToGlslang(stage));
 	if (uniformBase >= 0) { if (!glslToAstShader(glsl, astshader, uniformBase)) return false; }
 	else { if (!glslToAstShader(glsl, astshader)) return false; }

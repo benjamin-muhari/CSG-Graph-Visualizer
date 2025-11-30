@@ -273,6 +273,12 @@ void raytrace_generation_demo()
 			
 			//measurements.emplace_back(CSGVMeasurment(std::chrono::high_resolution_clock::now(), "asdqwe"));
 
+			if (GLOBAL_spirv_precompile)
+			{
+				Spirver_ext::precompileGlslAsAstShader(getShaderString("Shaders/raytrace_joint_template.frag"),
+					Spirver_ext::Stage::Fragment);
+			}
+
 			bef_gen_time = std::chrono::high_resolution_clock::now();
 			recompile = Application_Frame();
 			if (recompile)
